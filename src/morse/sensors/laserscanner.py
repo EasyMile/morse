@@ -47,15 +47,15 @@ class LaserScanner(Sensor):
     LaserScanner with remission values
     ___________________________________
 
-    Remission "is the reflection or scattering of light by a material." 
+    Remission "is the reflection or scattering of light by a material."
     (http://en.wikipedia.org/wiki/Remission_%28spectroscopy%29)
 
-    The level "rssi" adds a list of remission values to the LaserScanner. If a ray 
-    during the scan hits an object the rssi-value is the specular intenisty of the 
-    object's material; If it does not hit an object with a material the remission 
-    value is set to 0. 
+    The level "rssi" adds a list of remission values to the LaserScanner. If a ray
+    during the scan hits an object the rssi-value is the specular intenisty of the
+    object's material; If it does not hit an object with a material the remission
+    value is set to 0.
 
-    The intensity of the material can be changed in Blender (Property -> Material -> 
+    The intensity of the material can be changed in Blender (Property -> Material ->
     Specular -> Intensity). The important options are highlighted in the first image.
 
     +---------------------------------------------------------------------------------+
@@ -70,14 +70,14 @@ class LaserScanner(Sensor):
     |    Example of the LaserScanner with remission values                            |
     +---------------------------------------------------------------------------------+
 
-    In the second image the sensor is illustrated. Above every box the material 
+    In the second image the sensor is illustrated. Above every box the material
     properties and a corresponding excerpt from the socket stream is displayed.
 
     .. note::
-        
-        The remission values are **not** comparable to any physical remission value 
+
+        The remission values are **not** comparable to any physical remission value
         and are **not** calculated. They are just based on a property of a visual effect.
-    
+
 
     Configuration of the scanning parameters
     ----------------------------------------
@@ -291,17 +291,18 @@ class LaserScanner(Sensor):
             if target:
                 distance = self.bge_object.getDistanceTo(point)
                 # Return the point to the reference of the sensor
-                new_point = inverse * point
+                tmp = inverse * point
+                new_point = list(tmp) + [distance]
 
                 #logger.debug("\t\tGOT INTERSECTION WITH RAY: [%.4f, %.4f, %.4f]" % (correct_ray[0], correct_ray[1], correct_ray[2]))
                 #logger.debug("\t\tINTERSECTION AT: [%.4f, %.4f, %.4f] = %s" % (point[0], point[1], point[2], target))
             # If there was no intersection, store the default values
             else:
                 distance = self.laser_range
-                new_point = [0.0, 0.0, 0.0]
+                new_point = [0.0, 0.0, 0.0, 0.0]
 
             # Save the information gathered
-            self.local_data['point_list'][index] = new_point[:]
+            self.local_data['point_list'][index] = new_point
             self.local_data['range_list'][index] = distance
             index += 1
             self.change_arc()
@@ -350,8 +351,8 @@ class RSSILaserScanner(LaserScanner):
                 continue
 
             # Insert zeros in the remission list
-            self.local_data['remission_list'].append(0.0) 
-       
+            self.local_data['remission_list'].append(0.0)
+
     def getRSSIValue(self, target):
 
         """
@@ -366,7 +367,7 @@ class RSSILaserScanner(LaserScanner):
         before the name is used to get the material properties.
         """
         mat_name = target.getMaterialName()
-        try: 
+        try:
             mat_name = mat_name[2:]
             mat = bpymorse.get_material(mat_name)
             if mat:
@@ -379,7 +380,7 @@ class RSSILaserScanner(LaserScanner):
                     /src/morse/sensors/laserscanner.py the method \
                     'default_action' in the class LaserScannner_RSSI, \
                     where the name is parsed."%mat_name)
-            return -1              
+            return -1
 
     def default_action(self):
         inverse = self.position_3d.matrix.inverted()
@@ -396,7 +397,7 @@ class RSSILaserScanner(LaserScanner):
                                                              self.laser_range)
             would be possible, but longer way to get material name:
             target -> (list)meshes -> (list)materials -> (string)getMaterialName(id)
-            
+
             target_poly is shorter
             """
             target, point, normal, target_poly = self.bge_object.rayCast(correct_ray, None,
@@ -412,8 +413,8 @@ class RSSILaserScanner(LaserScanner):
                 distance = self.bge_object.getDistanceTo(point)
                 new_point = inverse * point
 
-                rssi = self.getRSSIValue(target_poly)                        
-                            
+                rssi = self.getRSSIValue(target_poly)
+
                 # Return the point to the reference of the sensor
 
 
@@ -431,4 +432,3 @@ class RSSILaserScanner(LaserScanner):
             self.local_data['remission_list'][index] = rssi
             index += 1
             LaserScanner.change_arc(self)
-

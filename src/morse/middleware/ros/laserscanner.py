@@ -33,7 +33,7 @@ class LaserScanPublisher(ROSPublisher):
 
         self.publish(laserscan)
 
-class PointCloud2Publisher(ROSPublisherTF):
+class PointCloud2PublisherOld(ROSPublisherTF):
     """ Publish the ``point_list`` of the laser scanner. """
     ros_class = PointCloud2
 
@@ -58,6 +58,32 @@ class PointCloud2Publisher(ROSPublisherTF):
         self.publish(pc2)
         self.send_transform_robot()
 
+class PointCloud2Publisher(ROSPublisherTF):
+    """ Publish the ``point_list`` of the laser scanner. """
+    ros_class = PointCloud2
+
+    def default(self, ci='unused'):
+        points = self.data['point_list']
+        size = len(points)
+
+        pc2 = PointCloud2()
+        pc2.header = self.get_ros_header()
+        pc2.height = 1
+        pc2.width = size
+        pc2.is_dense = False
+        pc2.is_bigendian = False
+        pc2.fields = [PointField('x', 0, PointField.FLOAT32, 1),
+                      PointField('y', 4, PointField.FLOAT32, 1),
+                      PointField('z', 8, PointField.FLOAT32, 1),
+                      PointField('distance', 12, PointField.FLOAT32, 1)]
+        pc2.point_step = 16
+        pc2.row_step = size * 16
+
+        pc2.data = pack_xyz_float32(points)
+
+        self.publish(pc2)
+        self.send_transform_robot()
+
 def pack_xyz_float32(points):
     flatten = itertools.chain.from_iterable(points)
-    return struct.pack('%if'%len(points)*3, *flatten)
+    return struct.pack('%if'%len(points)*4, *flatten)
