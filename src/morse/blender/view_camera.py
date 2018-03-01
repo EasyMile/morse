@@ -18,6 +18,7 @@ from morse.core import blenderapi
 start_position = []
 start_orientation = []
 keyboard_ctrl_objects = []
+last_mouse_pose = None
 
 robots = []
 current_robot = 0
@@ -169,7 +170,7 @@ def rotate(contr):
                     height = blenderapi.render().getWindowHeight()
 
                     # get mouse movement from function
-                    move = mouse_move(camera, mouse, width, height)
+                    move = mouse_move(mouse)
 
                     # set mouse sensitivity
                     sensitivity = camera['Sensitivity']
@@ -181,32 +182,25 @@ def rotate(contr):
                     # set the values
                     camera.applyRotation( [0.0, 0.0, leftRight], 0 )
                     camera.applyRotation( [upDown, 0.0, 0.0], 1 )
-
-                    # Center mouse in game window
-                    # Using the '//' operator (floor division) to produce an integer result
-                    blenderapi.render().setMousePosition(width//2, height//2)
+            else:
+                global last_mouse_pose
+                last_mouse_pose = None
 
     # Set the cursor visibility
     blenderapi.mousepointer(visible = mouse_visible)
 
-def mouse_move(camera, mouse, width, height):
+def mouse_move(mouse):
     """ Get the movement of the mouse as an X, Y coordinate. """
-    # distance moved from screen center
-    # Using the '//' operator (floor division) to produce an integer result
-    x = width//2 - mouse.position[0]
-    y = height//2 - mouse.position[1]
-    
-    # intialize mouse so it doesn't jerk first time
-    try:
-        camera['mouseInit']
-    except KeyError:
-        x = 0
-        y = 0
-        # bug in Add Property
-        # can't use True.  Have to use 1
-        camera['mouseInit'] = 1
+    global last_mouse_pose
+    if not last_mouse_pose:
+        # intialize mouse so it doesn't jerk first time
+        last_mouse_pose = mouse.position
+        return 0, 0
 
+    # distance moved from last pose
+    x = last_mouse_pose[0] - mouse.position[0]
+    y = last_mouse_pose[1] - mouse.position[1]
     logger.debug("Read displacement: %s, %s" % (x, y))
-    
+    last_mouse_pose = mouse.position
     # return mouse movement
     return x, y
