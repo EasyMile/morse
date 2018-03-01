@@ -165,29 +165,23 @@ def rotate(contr):
                 # Hide the cursor while we control the camera
                 mouse_visible = False
                 if mouse.positive:
-                    # get width and height of game window
-                    width = blenderapi.render().getWindowWidth()
-                    height = blenderapi.render().getWindowHeight()
-
                     # get mouse movement from function
                     move = mouse_move(mouse)
-
                     # set mouse sensitivity
                     sensitivity = camera['Sensitivity']
-
                     # Amount, direction and sensitivity
                     leftRight = move[0] * sensitivity
                     upDown = move[1] * sensitivity
-
                     # set the values
                     camera.applyRotation( [0.0, 0.0, leftRight], 0 )
                     camera.applyRotation( [upDown, 0.0, 0.0], 1 )
-            else:
-                global last_mouse_pose
-                last_mouse_pose = None
 
     # Set the cursor visibility
     blenderapi.mousepointer(visible = mouse_visible)
+    if mouse_visible:
+        global last_mouse_pose
+        last_mouse_pose = None
+
 
 def mouse_move(mouse):
     """ Get the movement of the mouse as an X, Y coordinate. """
