@@ -218,6 +218,11 @@ class PhysicsAckermannRobot(PhysicsWheelRobot):
     add_property('_wki_limits', 1.0, 'angular_velocity_integral_limits', 'double',
                 'limits of the integral term for velocity')
 
+    add_property('_4ws', False, 'has_4_ws', 'bool',
+                'number of steering wheel')
+    add_property('_use_pid', True, 'use_pid', 'bool',
+                'tune commands received with pid or use raw commands')
+
     def __init__ (self, obj, parent=None):
         """ Constructor method. """
         # Call the constructor of the parent class
@@ -283,6 +288,8 @@ class PhysicsAckermannRobot(PhysicsWheelRobot):
         chassis was moved by the builder script or manually in blender
         """
         joint = Joint6DoF(wheel, parent)
+        if self._4ws:
+            joint.limit_rotation_dof('Y', -self._max_steering_angle, self._max_steering_angle)
         joint.free_rotation_dof('Z')
         return joint # return a reference to the constraint
 
@@ -294,13 +301,16 @@ class PhysicsAckermannRobot(PhysicsWheelRobot):
         friction generation by front wheel. So, use a simple PID to
         guarantee the constraints
         """
-        self.pid_v.setpoint = vx
-        vel = self.bge_object.localLinearVelocity 
-        computed_vx = self.pid_v.update(vel[0])
+        computed_vx = vx
+        computed_vw = vw
+        if self._use_pid:
+            self.pid_v.setpoint = vx
+            vel = self.bge_object.localLinearVelocity
+            computed_vx = self.pid_v.update(vel[0])
 
-        self.pid_w.setpoint = vw
-        angular_vel = self.bge_object.localAngularVelocity
-        computed_vw = self.pid_w.update(angular_vel[2])
+            self.pid_w.setpoint = vw
+            angular_vel = self.bge_object.localAngularVelocity
+            computed_vw = self.pid_w.update(angular_vel[2])
         self._apply_vw_wheels(computed_vx, computed_vw)
 
     def _apply_vw_wheels(self, vx, vw):
@@ -317,8 +327,12 @@ class PhysicsAckermannRobot(PhysicsWheelRobot):
             # stop the wheel when velocity is below a given threshold
             for index in ['RL', 'RR']:
                 self._wheel_joints[index].angular_velocity(velocity_control, 0)
+                if self._4ws:
+                    self._wheel_joints[index].angular_velocity(steering_control, 0)
             for index in ['FR', 'FL']:
                 self._wheel_joints[index].angular_velocity(steering_control, 0)
+                if self._4ws:
+                    self._wheel_joints[index].angular_velocity(velocity_control, 0)
 
             self._stopped = True
         else:
@@ -337,12 +351,15 @@ class PhysicsAckermannRobot(PhysicsWheelRobot):
             for index in ['RL', 'RR']:
                 self._wheel_joints[index].angular_velocity(velocity_control, wx)
 
+            if self._4ws:
+                for index in ['FL', 'FR']:
+                    self._wheel_joints[index].angular_velocity(velocity_control, wx)
             logger.debug("Rear wheel speeds set to %.4f" % wx)
 
             vel = self.bge_object.localLinearVelocity
             # Compute angle of steering wheels
             if abs(vw) > 0.01:
-                radius = vel[0] / vw
+                radius = abs(vel[0]) / vw
                 if abs(radius) < (self._trackWidth / 2):
                     l_angle = math.copysign(self._max_steering_angle, radius)
                     r_angle = math.copysign(self._max_steering_angle, radius)
@@ -370,6 +387,9 @@ class PhysicsAckermannRobot(PhysicsWheelRobot):
 
             self._wheel_joints['FL'].angular_velocity(steering_control, diff_l_angle)
             self._wheel_joints['FR'].angular_velocity(steering_control, diff_r_angle)
+            if self._4ws:
+                self._wheel_joints['RL'].angular_velocity(steering_control, -diff_r_angle)
+                self._wheel_joints['RR'].angular_velocity(steering_control, -diff_l_angle)
 
             logger.debug("Angle left w %f right w %f" % (diff_l_angle, diff_r_angle))
 
