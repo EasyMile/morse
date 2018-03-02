@@ -51,6 +51,8 @@ class Keyboard(Actuator):
                  "'Velocity', 'Differential']")
     add_property('_speed', 1.0, 'Speed', 'float',
                  "Movement speed of the parent robot, in m/s")
+    add_property('_steering', 0.15, 'Steering', 'float',
+                 "Steering angle to apply, in rad")
 
     def __init__(self, obj, parent=None):
         logger.info('%s initialization' % obj.name)
@@ -85,11 +87,17 @@ class Keyboard(Actuator):
 
         # turn left
         if keyboard.events[blenderapi.LEFTARROWKEY] == is_actived:
-            rz = self._speed
+            if self._type == 'Steering':
+                rz = self._steering
+            else:
+                rz = self._speed
 
         # turn right
         if keyboard.events[blenderapi.RIGHTARROWKEY] == is_actived:
-            rz = -self._speed
+            if self._type == 'Steering':
+                rz = -self._steering
+            else:
+                rz = -self._speed
 
         # move up
         if keyboard.events[blenderapi.TKEY] == is_actived:
@@ -129,7 +137,7 @@ class Keyboard(Actuator):
 
         if self._type == 'Position' or self._type == 'Velocity':
             self.robot_parent.apply_speed(self._type, [vx, vy, vz], [rx, ry, rz / 2.0])
-        elif self._type == 'Differential':
+        elif self._type == 'Differential' or self._type == 'Steering':
             self.robot_parent.apply_vw_wheels(vx, rz)
 
 
