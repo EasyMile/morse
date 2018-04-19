@@ -86,7 +86,7 @@ MORSE_MODIFIER_DICT = {
         'morse.sensors.gps.GPS': "morse.modifiers.utm.CoordinatesToUTM",
         'morse.actuators.destination.Destination': "morse.modifiers.utm.CoordinatesFromUTM",
         'morse.actuators.waypoint.Waypoint': "morse.modifiers.utm.CoordinatesFromUTM",
-    },                  
+    },
     'PoseNoise' : {
         'morse.sensors.odometry.Odometry': "morse.modifiers.pose_noise.PoseNoiseModifier",
         'morse.sensors.pose.Pose': "morse.modifiers.pose_noise.PoseNoiseModifier",
@@ -193,6 +193,7 @@ MORSE_DATASTREAM_DICT = {
             "moos": 'morse.middleware.moos.gps.GPSNotifier'
             },
         "raw": {
+            "ros": 'morse.middleware.ros.gps.NavSatFixRawPublisher',
             "socket": INTERFACE_DEFAULT_OUT,
             "yarp": INTERFACE_DEFAULT_OUT,
             "yarp_json": INTERFACE_DEFAULT_OUT,
@@ -243,7 +244,7 @@ MORSE_DATASTREAM_DICT = {
             },
         "rssi": {
             "socket": INTERFACE_DEFAULT_OUT
-            },        
+            },
         "range": {
             "ros": 'morse.middleware.ros.infrared.RangePublisher',
             "socket": INTERFACE_DEFAULT_OUT,
